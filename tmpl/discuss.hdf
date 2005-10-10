@@ -1,0 +1,19 @@
+#########################################
+# discuss.hdf
+#
+
+#include "style.hdf"
+#include "dates.hdf"
+#include "timezones.hdf"
+
+Config.DebugPassword = 1
+
+ViewModes {
+  0 = month
+  0.name [Lang] = by Month
+  1 = new
+  1.name = New
+  2 = thread
+  2.name = by Thread
+}
+

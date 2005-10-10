@@ -1,0 +1,34 @@
+
+---[ TODO ]-----------------
+
+- add "view source"
+- add single message navigation:
+
+  - egroups: reply context at bottom
+  - hypermail/pipermail: nearby thread context at top and bottom
+  - listserv: navigation links at the top
+
+- add date sort, author sort to thread index
+- add IFRAME based index
+- add NON-FRAMES based index
+- add eGroups style message index
+- add sorting to thread display
+   - date of thread creation (current)
+   - date of last post
+
+
+- add trafgraf
+
+- add navigation for index displays that are too big:
+
+ http://groups.google.com/groups?dq=&hl=en&lr=&ie=UTF-8&threadm=1fiwrsj.u0o7gxo48qyyN%25idontreply%40toemail.com&prev=/groups%3Fhl%3Den%26lr%3D%26ie%3DUTF-8%26group%3Dalt.religion
+
+
+
+
+
+---[ DONE ]-----------------
+- add timezone and timezone set
+- a- add "100 posts in last 26 days"
+- add view this message
+

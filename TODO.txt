@@ -1,0 +1,6 @@
+
+
+- build a new version w/sqlite
+- add subject/date based 'soft-threading'
+
+

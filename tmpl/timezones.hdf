@@ -1,0 +1,94 @@
+
+Timezones {
+  GMT = GMT
+  US = US
+  US {
+    Eastern = US/Eastern         
+    Michigan = US/Michigan        
+    Central = US/Central         
+    Arizona = US/Arizona         
+    Mountain = US/Mountain        
+    Pacific = US/Pacific         
+    Alaska = US/Alaska           
+    Aleutian = US/Aleutian        
+    Hawaii = US/Hawaii          
+    Samoa = US/Samoa           
+  }
+  America = America
+  America {
+    Mexico_City = America/Mexico_City
+    Bogota = America/Bogota
+    Sao_Paulo = America/Sao_Paulo
+    Buenos_Aires = America/Buenos_Aires
+  }
+  Canada = Canada
+  Canada {
+    Saskatchewan = Canada/Saskatchewan
+    Atlantic = Canada/Atlantic
+    Newfoundland = Canada/Newfoundland
+  }
+  Atlantic = Atlantic
+  Atlantic {
+    South_Georgia = Atlantic/South_Georgia
+    Azores = Atlantic/Azores
+  }
+  Europe = Europe
+  Europe {
+    London = Europe/London
+    Amsterdam = Europe/Amsterdam
+    Belgrade = Europe/Belgrade
+    Brussels = Europe/Brussels
+    Sarajevo = Europe/Sarajevo
+    Athens = Europe/Athens
+    Bucharest = Europe/Bucharest
+    Helsinki = Europe/Helsinki
+    Moscow = Europe/Moscow
+  }
+  Africa = Africa
+  Africa {
+    Casablanca = Africa/Casablanca
+    Cairo = Africa/Cairo
+    Harare = Africa/Harare
+    Nairobi = Africa/Nairobi
+  }
+  Asia = Asia
+  Asia {
+    Jerusalem = Asia/Jerusalem
+    Baghdad = Asia/Baghdad
+    Tehran = Asia/Tehran
+    Muscat = Asia/Muscat
+    Baku = Asia/Baku
+    Kabul = Asia/Kabul
+    Yekaterinburg = Asia/Yekaterinburg
+    Karachi = Asia/Karachi
+    Calcutta = Asia/Calcutta
+    Almaty = Asia/Almaty
+    Colombo = Asia/Colombo
+    Bangkok = Asia/Bangkok
+    Shanghai = Asia/Shanghai
+    Hong_Kong = Asia/Hong_Kong
+    Singapore = Asia/Singapore
+    Taipei = Asia/Taipei
+    Tokyo = Asia/Tokyo
+    Seoul = Asia/Seoul
+    Yakutsk = Asia/Yakutsk
+    Vladivostok = Asia/Vladivostok
+    Magadan = Asia/Magadan
+  }
+  Australia = Australia
+  Australia {
+    Perth = Australia/Perth
+    Adelaide = Australia/Adelaide
+    Darwin = Australia/Darwin
+    Brisbane = Australia/Brisbane
+    Melbourne = Australia/Melbourne
+    Hobart = Australia/Hobart
+  }
+  Pacific = Pacific
+  Pacific {
+    Guam = Pacific/Guam
+    Auckland = Pacific/Auckland
+    Fiji = Pacific/Fiji
+    Kwajalein = Pacific/Kwajalein
+  }
+}

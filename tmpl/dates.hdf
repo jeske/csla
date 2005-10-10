@@ -1,0 +1,87 @@
+
+Lang.Dates {
+  Weekdays {
+    0 = 0
+    0.val = Sunday
+    1 = 1
+    1.val = Monday
+    2 = 2
+    2.val = Tuesday
+    3 = 3
+    3.val = Wednesday
+    4 = 4
+    4.val = Thursday
+    5 = 5
+    5.val = Friday
+    6 = 6
+    6.val = Saturday
+  }
+  Weekdays_Abbr {
+    0 = 0
+    0.val = Sun
+    1 = 1
+    1.val = Mon
+    2 = 2
+    2.val = Tues
+    3 = 3
+    3.val = Wed
+    4 = 4
+    4.val = Thurs
+    5 = 5
+    5.val = Fri
+    6 = 6
+    6.val = Sat
+  }
+  Months {
+    1 = 1
+    1.val = January
+    2 = 2
+    2.val = February
+    3 = 3
+    3.val = March
+    4 = 4
+    4.val = April
+    5 = 5
+    5.val = May
+    6 = 6
+    6.val = June
+    7 = 7
+    7.val = July
+    8 = 8
+    8.val = August
+    9 = 9
+    9.val = September
+    10 = 10
+    10.val = October
+    11 = 11
+    11.val = November
+    12 = 12
+    12.val = December
+  }
+  Months_Abbr {
+    1 = 1
+    1.val = Jan
+    2 = 2
+    2.val = Feb
+    3 = 3
+    3.val = Mar
+    4 = 4
+    4.val = Apr
+    5 = 5
+    5.val = May
+    6 = 6
+    6.val = Jun
+    7 = 7
+    7.val = Jul
+    8 = 8
+    8.val = Aug
+    9 = 9
+    9.val = Sep
+    10 = 10
+    10.val = Oct
+    11 = 11
+    11.val = Nov
+    12 = 12
+    12.val = Dec
+  }
+}

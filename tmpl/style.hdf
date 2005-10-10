@@ -1,0 +1,44 @@
+
+
+# setup the default style
+# this gets overridden by the list.hdf style settings!
+
+Style {
+
+  # page stuff
+
+  BGColor = #ffffff
+
+  # basic colors
+
+  HeaderBarColor    = #EEEEEE
+  SubHeaderBarColor = #CCCCCC
+  TitleBarColor     = #444444
+  HeaderBarColor    = #CCCCCC
+
+  
+  # for cell tables
+
+  CellBGColor       = #EEEEEE
+
+  # for all alt-row tables
+
+  RowColor = #FFFFFF
+  AltRowColor = #EEEEEE
+
+  ColumnHighlightColor = #CCCCCC
+
+  # for message rendering...
+
+  Msg.HeaderBGColor = #444444
+
+  A_link  = default
+  # #840284 is close to the IE default visited link color
+  A_visited = #840284
+  A_active = default
+  A_hover  = default
+
+}
+
+
+

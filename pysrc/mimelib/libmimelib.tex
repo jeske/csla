@@ -1,0 +1,772 @@
+% Copyright (C) 2001 Python Software Foundation
+%
+% Use the following until this is added to Python's standard library
+\documentclass{howto}
+\title{mimelib -- A MIME and RFC822 handling package}
+\release{0.2}
+\author{Barry A. Warsaw}
+\authoraddress{barry@digicool.com}
+\begin{document}
+\maketitle
+
+%\section{\module{mimelib} -- A MIME and RFC822 handling package}
+
+%\declaremodule{extension}{mimelib}
+%\modulesynopsis{A package for parsing, writing, and managing MIME messages.}
+%\moduleauthor{Barry A. Warsaw}{barry@digicool.com}
+%\sectionauthor{Barry A. Warsaw}{barry@digicool.com}
+
+The \module{mimelib} package is a library for managing MIME and other
+\rfc{822}-based message documents.  It subsumes most of the functionality
+in several older standard modules such as \module{rfc822},
+\module{mimetools}, \module{multifile}, and other non-standard packages such
+as \module{mimecntl}.
+
+The primary distinguishing feature of \module{mimelib} is that it
+splits the parsing and generating of MIME documents from the internal
+\emph{object model} representation of MIME.  Applications
+using \module{mimelib} deal primarily with objects; you can add
+sub-objects to messages, remove sub-objects from messages, completely
+re-arrange the contents, etc.  There is a separate parser class and a
+separate generator class which handles the transformation from flat
+text to the object module, and then back to flat text again.  There
+are also subclasses for some common MIME object types, and a few
+helper modules for extracting and parsing message field values.
+
+The following sections describe the functionality of the
+\module{mimelib} package.  The ordering follows a progression common
+in applications: a MIME document is read as flat text from a file or
+standard input, the text is parsed to produce an object model
+representation of the MIME document, this model is manipulated and
+queried, and finally the model is rendered back into flat text.  First
+though, there's an introduction to the basic
+\class{mimelib.Message} class.
+
+It is perfectly feasible to create the object model out of whole cloth
+-- i.e. completely from scratch.  From there, a similar progression can
+be taken.  Also covered in the following sections are the exception
+classes you might encounter while using \module{mimelib}, some
+auxiliary utilities, and a few examples.
+
+\section{The \class{mimelib.Message} class}
+
+The \class{mimelib.Message} class (hereafter referred to simply as
+\class{Message}) is the base class for the
+\module{mimelib} object model.  It provides the core functionality for
+setting and querying header fields, and for accessing message bodies.
+It knows nothing about parsing or generating plain text documents.
+
+Conceptually, a \class{Message} object consists of \emph{headers} and
+\emph{payloads}.  Headers are \rfc{822} style field name and
+values where the field name and value are separated by a colon.
+Headers are stored and returned in case-preserving form but are
+matched case-insensitively.  There may also be a single
+\samp{Unix-From} header, also known as the envelope header or the
+\code{From_} header.  The payload is either a string in the case of
+simple message objects, or a list of \class{Message} objects for
+multipart MIME documents.
+
+\class{Message} objects provide a mapping style interface for
+accessing the message headers, and an explicit interface for accessing
+both the headers and the payload.  Here are the methods of the
+\class{Message} class:
+
+\begin{methoddesc}[Message]{ismultipart}{}
+Return 1 if the payload is a list of sub-\class{Message} objects,
+otherwise return 0 (implying that the payload is a simple string
+object).
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{set_unixfrom}{unixfrom}
+Set the \samp{Unix-From} (a.k.a envelope header or \code{From_}
+header) to \var{unixfrom}, which should be a string.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_unixfrom}{}
+Return the \samp{Unix-From} header.  Defaults to \code{None} if the
+\samp{Unix-From} header was never set.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{add_payload}{payload}
+Add \var{payload} to the message object's existing payload.  If, prior
+to calling this method, the object's payload was \code{None}
+(i.e. never before set), then after this method is called, the payload
+will be the argument \var{payload}.
+
+If the object's payload was already a list
+(i.e. \method{ismultipart()} returns 1), then \var{payload} is
+appended to the end of the existing payload list.
+
+For any other type of existing payload, \method{add_payload()} will
+transform the new payload into a list consisting of the old payload
+and \var{payload}, but only if the document is already a MIME
+multipart document.  This condition is satisfied if the message's
+\code{Content-Type:} header's main type is either \var{multipart}, or
+there is no \code{Content-Type:} header.  In any other situation,
+\exception{MultipartConversionError} is raised.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get_payload}{\optional{i}}
+Return the current payload, which will be a list of \class{Message}
+objects when \method{ismultipart()} returns 1, or a scalar (hopefully
+a string) when \method{ismultipart()} returns 0.
+
+With optional \var{i}, \method{get_payload()} will return the
+\var{i}-th element of the payload, if \method{ismultipart()} returns
+1.  An \code{IndexError} will be raised if \var{i} is less than 0 or
+greater than the number of items in the payload.  If the payload is
+scalar (i.e. \method{ismultipart()} returns 0) and \var{i} is given, a
+\code{TypeError} is raised.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{set_payload}{payload}
+Set the entire message object's payload to \var{payload}.  It is the
+client's responsibility to ensure the payload invariants.
+\end{methoddesc}
+
+The following methods implement a mapping-like interface for accessing
+the message object's \rfc{822} headers.  Note that there are some
+semantic differences between these methods and a normal mapping
+(i.e. dictionary) interface.  For example, in a dictionary there are
+no duplicate keys, but there may be duplicate message headers.  Also,
+in dictionaries there is no guaranteed order to the keys returned by
+\method{keys()}, but in a \class{Message} object, there is an explicit
+order.  These semantic differences are intentional and are biased
+toward maximal convenience.
+
+Note that in all cases, any optional \samp{Unix-From} header the message
+may have is not included in the mapping interface.
+
+\begin{methoddesc}[Message]{__len__}{}
+Return the total number of headers, including duplicates.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{__getitem__}{name}
+Return the value of the named header field.  \var{name} should not
+include the colon field separator.  If the header is missing,
+\code{None} (a \code{KeyError} is never raised).
+
+Note that if the named field appears more than once in the message's
+headers, exactly which of those field values will be returned is
+undefined.  Use the \method{getall()} method to get the values of all
+the extant named headers.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{__setitem__}{name, val}
+Add a header to the message with field name \var{name} and value
+\var{val}.  The field is appended to the end of the message's headers.
+
+Note that this does \emph{not} overwrite or delete any existing header
+with the same name.  If you want to ensure that the new header is the
+only one present in the message with field name
+\var{name}, first use \method{__delitem__()} to delete all named
+headers, e.g.:
+
+\begin{verbatim}
+del msg['subject']
+msg['subject'] = 'Python roolz!'
+\end{verbatim}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{__delitem__}{name}
+Delete all occurrences of the field with name \var{name} from the
+message's headers.  No exception is raised if the named field isn't
+present in the headers.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{has_key}{name}
+Return 1 if the message contains a header field named \var{name},
+otherwise return 0.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{keys}{}
+Return a list of all the message's header field names.  These keys
+will be sorted in the order in which they were added to the message
+via \method{__setitem__()}, and may contain duplicates.  Any fields
+deleted and then subsequently re-added are always appended to the end
+of the header list.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{values}{}
+Return a list of all the message's field values.  These will be sorted
+in the order in which they were added to the message via
+\method{__setitem__()}, and may contain duplicates.  Any fields
+deleted and then subsequently re-added are always appended to the end
+of the header list.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{items}{}
+Return a list of 2-tuples containing all the message's field headers and
+values.  These will be sorted in the order in which they were added to
+the message via \method{__setitem__()}, and may contain duplicates.
+Any fields deleted and then subsequently re-added are always appended
+to the end of the header list.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{get}{name\optional{, failobj}}
+Return the value of the named header field.  This is identical to
+\method{__getitem__()} except that optional \var{failobj} is returned
+if the named header is missing (defaults to \code{None}).
+\end{methoddesc}
+
+Here are some additional useful methods:
+
+\begin{methoddesc}[Message]{getall}{name\optional{, failobj}}
+Return a list of all the values for the field named \var{name}.  These
+will be sorted in the order in which they were added to the message
+via \method{__setitem__()}.  Any fields
+deleted and then subsequently re-added are always appended to the end
+of the list.
+
+If there are no such named headers in the message, \var{failobj} is
+returned (defaults to \code{None}).
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{addheader}{_name, _value, **_params}
+Extended header setting.  This method is similar to
+\method{__setitem__()} except that additional header parameters can be
+provided as keyword arguments.  \var{_name} is the header to set and
+\var{_value} is the ``primary'' value for the header.
+
+For each item in the keyword argument dictionary \var{_params}, the
+key is taken as the parameter name, with underscores converted to
+dashes (since dashes are illegal in Python identifiers).  Normally,
+the parameter will be added as \code{key="value"} unless the value is
+\code{None}, in which case only the key will be added.
+
+Here's an example:
+
+\begin{verbatim}
+msg.addheader('Content-Disposition', 'attachment', filename='bud.gif')
+\end{verbatim}
+
+This will add a header that looks like
+
+\begin{verbatim}
+Content-Disposition: attachment; filename="bud.gif"
+\end{verbatim}
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{gettype}{\optional{failobj}}
+Return the message's content type, as a string of the form
+``maintype/subtype'' as taken from the \code{Content-Type:} header.
+The returned string is coerced to lowercase.
+
+If there is no \code{Content-Type:} header in the message,
+\var{failobj} is returned (defaults to \code{None}).
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{getmaintype}{\optional{failobj}}
+Return the message's main content type.  This essentially returns the
+``maintype'' part of the string returned by \method{gettype()}, with the
+same semantics for \var{failobj}.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{getsubtype}{\optional{failobj}}
+Return the message's sub-content type.  This essentially returns the
+``subtype'' part of the string returned by \method{gettype()}, with the
+same semantics for \var{failobj}.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{getparams}{\optional{failobj}\optional{, header}}
+Return the field parameters for the \code{Content-Type:} header as a
+list of strings.  If the message has no \code{Content-Type:} header,
+then \var{failobj} is returned (defaults to \code{None}).
+
+Optional \var{header} if given, specifies the message header to use
+instead of \code{Content-Type:}.
+\end{methoddesc}
+
+\begin{methoddesc}[Message]{getparam}{param\optional{,
+    failobj}\optional{, header}}
+Return the value of the \code{Content-Type:} header's parameter
+\var{param} as a string.  If the message has no \code{Content-Type:}
+header or if there is no such parameter, then \var{failobj} is
+returned (defaults to \code{None}).
+
+Optional \var{header} if given, specifies the message header to use
+instead of \code{Content-Type:}.
+\end{methoddesc}
+
+\class{Message} objects can also optionally contain two instance
+attributes, which can be used when generating the plain text of a MIME
+message.
+
+\begin{datadesc}{preamble}
+The format of a MIME document allows for some text between the blank
+line following the headers, and the first multipart boundary string.
+Normally, this text is never visible in a MIME-aware mail reader
+because it falls outside the standard MIME armor.  However, when
+viewing the raw text of the message, or when viewing the message in a
+non-MIME aware reader, this text can become visible.
+
+The \var{preamble} attribute, if set, contains this leading
+extra-armor text for MIME documents.  When the \class{Parser}
+discovers some text after the headers but before the first boundary
+string, it assigns this text to the message's \var{preamble}
+attribute.  When the \class{Generator} is writing out the plain text
+representation of a MIME message, and it finds the message has a
+\var{preamble} attribute, it will write this text in the area between
+the headers and the first boundary.
+
+Note that if the message object has no preamble, there will be no
+\var{preamble} attribute on the object.
+\end{datadesc}
+
+\begin{datadesc}{epilogue}
+The \var{epilogue} attribute acts the same way as the \var{preamble}
+attribute, except that it contains text that appears between the last
+boundary and the end of the message.
+\end{datadesc}
+
+\section{Parsing MIME documents}
+The \class{mimelib.Parser} class (hereafter referred to as
+\class{Parser}) is used to take a message in flat text form and create
+the associated object model.  The resulting object tree can then be
+manipulated using the \class{Message} class interface and turned over
+to a \class{Generator} to return the textual representation of the
+message.  It is intended that the \class{Parser} to \class{Generator}
+path be idempotent if the object model isn't modified in between.
+
+\begin{classdesc}{Parser}{\optional{_class}}
+The constructor for the \class{Parser} class takes a single optional
+argument \var{_class}.  This must be callable factory (i.e. a function
+or a class), and it is used whenever a sub-message object needs to be
+created.   It defaults to \class{Message}.  \var{_class} will be
+called with zero arguments.
+\end{classdesc}
+
+The other public \class{Parser} methods are:
+
+\begin{methoddesc}[Parser]{parse}{fp}
+Read all the data from the file-like object \var{fp}, parse the
+resulting text, and return the root message object.  \var{fp} must
+support both the \method{readline()} and the \method{read()} methods
+on file-like objects.
+
+The text contained in \var{fp} must be formatted as a block of \rfc{822}
+style headers and header continuation lines, optionally preceeded by a
+\samp{Unix-From} header.  The header block is terminated either by the
+end of the data or by a blank line.  Following the header block is the
+body of the message (which may contain MIME encoded sub-messages).
+\end{methoddesc}
+
+\begin{methoddesc}[Parser]{parsestr}{text}
+Similar to the \method{parse()} method, except it takes a string
+object instead of a file-like object.  Calling this method on a string
+is exactly equivalent to wrapping \var{text} in a \class{StringIO}
+instance first and calling \method{parse()}.
+\end{methoddesc}
+
+\section{Generating MIME documents}
+
+The \class{mimelib.Generator} class (hereafter referred to as
+\class{Generator}) is used to render a message object model into its
+flat text representation, including MIME encoding any sub-messages,
+generating the correct \rfc{822} headers, etc.
+
+\begin{classdesc}{Generator}{outfp\optional{, mangle_from_}}
+The constructor for the \class{Generator} class takes a file-like
+object called \var{outfp} for an argument.  \var{outfp} must support
+the \method{write()} method and be usable as the output file in a
+Python 2.0 extended print statement.
+
+Optional \var{mangle_from_} is a flag that, when true, puts a ``>''
+character in front of any line in the body that starts exactly as
+\samp{From } (i.e. \code{From} followed by a space at the front of the
+line).  This is the only guaranteed portable way to avoid having such
+lines be mistaken for \samp{Unix-From} headers (see
+\url{http://home.netscape.com/eng/mozilla/2.0/relnotes/demo/content-length.html}
+ for details).
+\end{classdesc}
+
+The other public \class{Generator} methods are:
+
+\begin{methoddesc}[Generator]{write}{msg\optional{, unixfrom}}
+Print the textual representation of the message object tree rooted at
+\var{msg} to the output file specified when the \class{Generator}
+instance was created.  Sub-objects are visited depth-first and the
+resulting text will be properly MIME encoded.
+
+Optional \var{unixfrom} is a flag that forces the printing of the
+\samp{Unix-From} (a.k.a. envelope header or \code{From_} header)
+delimiter before the first \rfc{822} header of the root message
+object.  If the root object has no \samp{Unix-From} header, a standard
+one is crafted.  Set this to 0 to inhibit the printing of the
+\samp{Unix-From} delimiter (the default is to print the \samp{Unix-From}
+header).
+
+Note that for sub-objects, no \samp{Unix-From} header is ever printed.
+\end{methoddesc}
+
+As an alternative to using the \class{Generator} class, the
+\module{mimelib} package provides a mix-in class called
+\class{StringableMixin} which can be found in the
+\module{mimelib.StringableMixin}
+module.  This mix-in class provides two methods for getting the
+representation of the message tree as plain text.  To use this class,
+you must multiply derive from
+\class{StringableMixin} and a class such as \class{Message} or
+\class{BaseMIME}.
+
+\begin{methoddesc}[StringableMixin]{get_text}{\optional{unixfrom}}
+Return a string containing the plain text of the message tree.  This
+is essentially a convenience wrapper around calling the
+\class{Generator} class with a \class{StringIO} argument.  Optional
+\var{unixfrom} is a flag saying whether the \samp{Unix-From} line should
+be printed (by default, it is not).
+\end{methoddesc}
+
+\begin{methoddesc}[ReprMixin]{__str__}{}
+A method for supporting \samp{str(msg)}.  This simply calls
+\method{get_text()} passing true to the \var{unixfrom}
+flag\footnote{Really, \method{__str__()} should return a string that
+does not contain the \samp{Unix-From} while \method{__repr__()} would
+return a string that does contain the \samp{Unix-From}.  However, it
+turns out to be more convenient (currently) for \code{str(msg)} to not
+include the \samp{Unix-From}.  Practicality beats Purity.}.
+\end{methoddesc}
+
+\section{Creating MIME and message objects from scratch}
+
+Ordinarily, you get a message object tree by passing some text to a
+\class{Parser} instance, which parses the text and returns the root of
+the tree.  However you can also build a complete object tree from
+scratch, or even individual \class{Message} objects, by hand.  In fact,
+you can also take an existing tree and add new \class{Message}
+objects, move them around, etc.  This makes a very convenient
+interface for slicing-and-dicing MIME messages.
+
+You can create a new object tree by creating \class{Message}
+instances, adding payloads and all the appropriate headers manually.
+For MIME messages though, \module{mimelib} provides some convenient
+classes to make things easier.  Each of these classes should be
+imported from a module with the same name as the class, from within
+the \module{mimelib} package.  E.g.:
+
+\begin{verbatim}
+import mimelib.Image.Image
+\end{verbatim}
+
+or
+
+\begin{verbatim}
+from mimelib.Text import Text
+\end{verbatim}
+
+Here are the classes:
+
+\begin{classdesc}{MIMEBase}{_major, _minor, **_params}
+This is the base class for all the MIME-specific subclasses of
+\class{Message}.  Ordinarily you won't create instances specifically
+of \class{MIMEBase}, although you could.  \class{MIMEBase} is provided
+primarily as a convenient base class for more specific MIME-aware
+subclasses.
+
+\var{_major} is the \code{Content-Type:} major type (e.g. ``text'' or
+``image''), and \var{_minor} is the \code{Content-Type:} minor type
+(e.g. ``plain'' or ``gif'').  \var{_params} is a parameter key/value
+dictionary and is passed directly to \method{Message.addheader()}.
+
+The \class{MIMEBase} class always adds a \code{Content-Type:} header
+(based on \var{_major}, \var{_minor}, and \var{_params}), and a
+\code{MIME-Version:} header (always set to ``1.0'').
+\end{classdesc}
+
+\begin{classdesc}{Image}{_imagedata\optional{, _minor\optional{,
+    _encoding\optional{, **_params}}}}
+
+A subclass of \class{MIMEBase}, the \class{Image} class is used to
+create MIME message objects of major type ``image''.  \var{_imagedata}
+is a string containing the raw image data.  If this data can be
+decoded by the standard Python module \module{imghdr}, then the
+subtype will be automatically included in the \code{Content-Type:}
+header.  Otherwise you can explicitly specify the image subtype via
+the \var{_minor} parameter.  If the minor type could not be guessed
+and \var{_minor} was not given, then \code{TypeError} is raised.
+
+Optional \var{_encoder} is a callable (i.e. function) which will
+perform the actual encoding of the image data for transport.  The
+callable takes one argument, which is the \class{Image} object
+instance.  It should use \method{get_payload()} and
+\method{set_payload()} to change the payload to encoded form.  It
+should also add any
+\code{Content-Transfer-Encoding:} or other headers to the message
+object as necessary.  The default encoding is base64.
+
+\var{_params} are passed straight through to the \class{MIMEBase}
+constructor.
+\end{classdesc}
+
+\begin{classdesc}{Text}{_text\optional{, _minor\optional{, _charset}}}
+A subclass of \class{MIMEBase}, the \class{Text} class is used to
+create MIME objects of major type ``text''.  \var{_text} is the string
+for the payload.  \var{_minor} is the minor type and defaults to
+``plain''.  \var{_charset} is the character set of the text and is
+passed as a parameter to the \class{MIMEBase} constructor; it defaults
+to ``us-ascii''.  No guessing or encoding is performed on the text
+data, but a newline is appended to \var{_text} if it doesn't already
+end with a newline.
+\end{classdesc}
+
+\begin{classdesc}{RFC822}{_msg}
+A subclass of \class{MIMEBase}, the \class{RFC822} class is used to
+create MIME objects of type ``message/rfc822''.  \var{_msg} is used as
+the payload, and must be an instance of class \class{Message} (or a
+subclass thereof), otherwise a \exception{TypeError} is raised.
+\end{classdesc}
+
+\section{\module{mimelib} exception classes}
+
+The following exception classes are defined in the
+\module{mimelib.Errors} module:
+
+\begin{excclassdesc}{MessageError}{}
+This is the base class for all exceptions that the \module{mimelib}
+package can raise.  It is derived from the standard
+\exception{Exception} class and defines no additional methods.
+\end{excclassdesc}
+
+\begin{excclassdesc}{MessageParseError}{}
+This is the base class for exceptions thrown by the \class{Parser}
+class.  It is derived from \exception{MessageError}.
+\end{excclassdesc}
+
+\begin{excclassdesc}{HeaderParseError}{}
+Raised under some error conditions when parsing the \rfc{822} headers of
+a message, this class is derived from \exception{MessageParseError}.
+It can be raised from the \method{Parser.parse()} or
+\method{Parser.parsestr()} methods.
+
+Situations where it can be raised include finding a \samp{Unix-From}
+header after the first \rfc{822} header of the message, finding a
+continuation line before the first \rfc{822} header is found, or finding
+a line in the headers which is neither a header or a continuation
+line.
+\end{excclassdesc}
+
+\begin{excclassdesc}{BoundaryError}{}
+Raised under some error conditions when parsing the \rfc{822} headers of
+a message, this class is derived from \exception{MessageParseError}.
+It can be raised from the \method{Parser.parse()} or
+\method{Parser.parsestr()} methods.
+
+Situations where it can be raised include not being able to find the
+starting or terminating boundary in a \code{multipart/*} message.
+\end{excclassdesc}
+
+\begin{excclassdesc}{MultipartConversionError}{}
+Raised when a payload is added to a \class{Message} object using
+\method{add_payload()}, but the payload is already a scalar and the
+message's \code{Content-Type:} main type is not either ``multipart''
+or missing.  \exception{MultipartConversionError} multiply inherits
+from \exception{MessageError} and the built-in \exception{TypeError}.
+\end{excclassdesc}
+
+\section{Auxiliary utilities}
+There are several useful utilities provided with the \module{mimelib}
+package.
+
+\begin{classdesc}{MsgReader}{rootmsg}
+This class (imported from the \module{mimelib.MsgReader} module),
+provides a file-like interface to a message object tree.  Actually, at
+the moment it only provides a limited subset of file methods, but more
+may be added in the future.  Its primary purpose is to enable
+line-by-line iteration over the textual representation of the message
+object tree, without having to flatten it with a \class{Generator}
+first.
+
+\var{rootmsg} is the root of the object tree to iterate line-by-line
+over.
+
+\begin{methoddesc}{readline}{}
+Return the next line as would be read from the flattened text
+representation of the message object tree.  Like ``standard''
+\method{readline()}, this returns the empty string when the end of the
+message object tree is reached.  Note that message headers are
+\emph{not} included in the line-by-line iteration, only the payloads
+and recursively, the payloads of the sub-objects in a depth-first
+traversal.
+\end{methoddesc}
+
+\begin{methoddesc}{readlines}{\optional{sizehint}}
+Returns all the lines of the message bodies as would be read from the
+flattened text representation of the message object tree.  If the
+optional \var{sizehint} argument is present, instead of reading all
+the lines, whole lines totalling approximately sizehint bytes are
+read.  This method is provided for compatibility with Python 2.1's
+\module{xreadlines} module.
+\end{methoddesc}
+\end{classdesc}
+
+The \module{mimelib.address} module exports some of the more useful
+address parsing related functions from the \module{rfc822} module.
+They are mostly provided for convenience.
+
+\begin{funcdesc}{quote}{str}
+Return a new string with backslashes in \var{str} replaced by two
+backslashes and double quotes replaced by backslash-double quote.
+\end{funcdesc}
+
+\begin{funcdesc}{unquote}{str}
+Return a new string which is an \emph{unquoted} version of \var{str}.
+If \var{str} ends and begins with double quotes, they are stripped
+off.  Likewise if \var{str} ends and begins with angle brackets, they
+are stripped off.
+\end{funcdesc}
+
+\begin{funcdesc}{parseaddr}{address}
+Parse address -- which should be the value of some address-containing
+field such as \code{To:} or \code{Cc:} -- into its constituent
+``realname'' and ``email address'' parts.  Returns a tuple of that
+information, unless the parse fails, in which case a 2-tuple of
+\code{(None, None)} is returned.
+\end{funcdesc}
+
+\begin{funcdesc}{dump_address_pair}{pair}
+The inverse of \method{parseaddr()}, this takes a 2-tuple of the form
+\code{(realname, email_address)} and returns the string value suitable
+for a \code{To:} or \code{Cc:} header.  If the first element of
+\var{pair} is false, then the second element is returned unmodified.
+\end{funcdesc}
+
+Module \module{address} also provides the following useful function:
+
+\begin{funcdesc}{getaddresses}{fieldvalues}
+This method returns a list of 2-tuples of the form returned by
+\code{parseaddr()}.  \var{fieldvalues} is a sequence of header field
+values as might be returned by \method{Message.getall()}.  Here's a
+simple example that gets all the recipients of a message:
+
+\begin{verbatim}
+from mimelib.address import getaddresses
+
+tos = msg.getall('to')
+ccs = msg.getall('cc')
+resent_tos = msg.getall('resent-to')
+resent_ccs = msg.getall('resent-cc')
+all_recipients = getaddresses(tos + ccs + resent_tos + resent_ccs)
+\end{verbatim}
+\end{funcdesc}
+
+The \module{mimelib.date} module also exports some other useful date
+related functions from the \module{rfc822} module.  They are mostly
+provided for convenience.
+
+\begin{funcdesc}{parsedate}{date}
+Attempts to parse a date according to the rules in \rfc{822}.
+however, some mailers don't follow that format as specified, so
+\function{parsedate()} tries to guess correctly in such cases. 
+\var{date} is a string containing an \rfc{822} date, such as 
+\code{'Mon, 20 Nov 1995 19:12:08 -0500'}.  If it succeeds in parsing
+the date, \function{parsedate()} returns a 9-tuple that can be passed
+directly to \function{time.mktime()}; otherwise \code{None} will be
+returned.  Note that fields 6, 7, and 8 of the result tuple are not
+usable.
+\end{funcdesc}
+
+\begin{funcdesc}{parsedate_tz}{date}
+Performs the same function as \function{parsedate()}, but returns
+either \code{None} or a 10-tuple; the first 9 elements make up a tuple
+that can be passed directly to \function{time.mktime()}, and the tenth
+is the offset of the date's timezone from UTC (which is the official
+term for Greenwich Mean Time).  (Note that the sign of the timezone
+offset is the opposite of the sign of the \code{time.timezone}
+variable for the same timezone; the latter variable follows the
+\POSIX{} standard while this module follows \rfc{822}.)  If the input
+string has no timezone, the last element of the tuple returned is
+\code{None}.  Note that fields 6, 7, and 8 of the result tuple are not
+usable.
+\end{funcdesc}
+
+\begin{funcdesc}{mktime_tz}{tuple}
+Turn a 10-tuple as returned by \function{parsedate_tz()} into a UTC
+timestamp.  It the timezone item in the tuple is \code{None}, assume
+local time.  Minor deficiency: this first interprets the first 8
+elements as a local time and then compensates for the timezone
+difference; this may yield a slight error around daylight savings time
+switch dates.  Not enough to worry about for common use.
+\end{funcdesc}
+
+\begin{funcdesc}{formatdate}{\optional{timeval}}
+Returns the time formatted as per Internet standards \rfc{822}
+and updated by \rfc{1123}.  If \var{timeval} is provided, then it
+should be a floating point time value as expected by
+\method{time.gmtime()}, otherwise the current time is used.
+\end{funcdesc}
+
+\section{Requirements, downloading, installing, and contact information}
+
+\module{mimelib} has been tested with Python 2.0 and Python 2.1; there
+are currently no plans to support earlier versions of Python.
+
+\module{mimelib} development is current hosted at SourceForge, and the
+project summary information is available at
+\url{http://sourceforge.net/projects/mimelib/}.  This documentation is
+available on-line at \url{http://mimelib.sourceforge.net/}.  The goal
+of the \module{mimelib} project at SourceForge is to solidify the API,
+and work towards a stable enough release to petition for inclusion in
+the Python standard library.  In any event, \module{mimelib} will be a
+required component for GNU Mailman version 2.1 (see
+\url{http://www.list.org/}).
+
+\module{mimelib} is easy to install via Python's standard
+\emph{distutils} facility.  Simply unpack the tarball at your
+shell\footnote{These instructions are admittedly Unix-centric.
+\module{mimelib} itself should be portable to any system that Python
+supports, and I welcome suggestions for unpacking and installing
+instructions for other platforms}
+using a command such as:
+
+\begin{verbatim}
+# tar zxvf mimelib-X.Y.tar.gz
+# cd mimelib-X.Y
+# python setup.py install
+\end{verbatim}
+
+where \code{X.Y} refers to the specific version number of the latest
+\module{mimelib} release, e.g. \code{mimelib-0.3.tar.gz}.
+
+\emph{Note that if your \code{tar} command doesn't accept the \code{z}
+option, you'll need the GNU gzip/gunzip package, and can alternatively
+try this:}
+
+\begin{verbatim}
+# gunzip -c mimelib-X.Y.tar.gz | tar xvf -
+# cd mimelib-X.Y
+# python setup.py install
+\end{verbatim}
+
+That's all there is to it!  You should now be able to do something
+like the following to make sure that you can access \module{mimelib}
+from Python:
+
+\begin{verbatim}
+# python
+Python 2.1 (#1, Apr 17 2001, 23:30:09) 
+[GCC egcs-2.91.66 19990314/Linux (egcs-1.1.2 release)] on linux2
+Type "copyright", "credits" or "license" for more information.
+>>> import mimelib
+>>> mimelib.__version__
+'0.3'
+\end{verbatim}
+
+Note that the actual version number printed may be different.
+
+You can contact the author of \module{mimelib} via:
+
+\begin{verbatim}
+    Barry Warsaw
+    barry@digicool.com
+    Pythonlabs Team
+    Digital Creations
+    http://barry.wooz.org
+\end{verbatim}
+
+%\section{Examples}
+
+%\emph{I'll fill in some more examples as I get more experience with
+%the library.}
+
+% remove this when adding to the Python standard library
+\end{document}
