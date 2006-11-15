@@ -1,0 +1,13 @@
+*.[oa]
+.backup-*
+.autosave-*
+.xvpics
+*.pyo
+*.pyc
+*.pid
+*.class
+*~
+core
+error_log
+access_log
+MANIFEST
