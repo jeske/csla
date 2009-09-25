@@ -19,7 +19,7 @@
 <TR BGCOLOR=<?cs var:Style.TitleBarColor ?>>
   <TD><font color=white><b>Author</b></font></TD>
   <?cs each:mon = CGI.Months ?>
-      <TD nowrap STYLE="border-right=1px solid white;">&nbsp;
+      <TD nowrap STYLE="border-right:1px solid white;">&nbsp;
         <font color=white><a class=navi0 href="<?cs var:CGI.URIRoot ?><?cs var:CGI.ArchiveName ?>/top_authors?date=<?cs var:mon ?>&start_date=<?cs var:Query.start_date ?>">
 	  <?cs if:mon == "total" ?>
 	    <b>Total</b>

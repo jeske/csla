@@ -1,8 +1,8 @@
 <STYLE>
-A.subj:link { color:black; text-decoration:none; cursor:default; }
-A.subj:visited { color:black; text-decoration:none; cursor:default; }
-A.subj:hover { color:black; text-decoration:none; cursor:default; }
-A.subj:active { color:black; text-decoration:none; cursor:default; }
+A.subj:link { color:black; text-decoration:none;  }
+A.subj:visited { color:black; text-decoration:none;; }
+A.subj:hover { color:black; text-decoration:none;  }
+A.subj:active { color:black; text-decoration:none; }
 
 </STYLE>
 <script language="JavaScript1.2">
@@ -62,7 +62,7 @@ function select_page(page, doc_id) {
   if (page != CurrentPage) {
     for (var x = 0; x < Pages[CurrentPage].length; x++)
     {
-      document.getElementById("ind_" + Pages[CurrentPage][x]).src = "/img/blanktri.gif";
+      document.getElementById("ind_" + Pages[CurrentPage][x]).src = "/discuss/tmpl/img/blanktri.gif";
     }
     CurrentPage = page;
   }
@@ -71,17 +71,17 @@ function select_page(page, doc_id) {
   {
     elem_docid = Pages[page][x];
     if (Pages[page][x] == parseInt(doc_id)) {
-      document.getElementById("ind_" + elem_docid).src = "/img/tri.gif";
+      document.getElementById("ind_" + elem_docid).src = "/discuss/tmpl/img/tri.gif";
     } else {
      <?cs if:#CGI.Prefs.MultiMsg ?>
-      document.getElementById("ind_" + elem_docid).src = "/img/bartri.gif";
+      document.getElementById("ind_" + elem_docid).src = "/discuss/tmpl/img/bartri.gif";
      <?cs else ?>
-      document.getElementById("ind_" + elem_docid).src = "/img/blanktri.gif";
+      document.getElementById("ind_" + elem_docid).src = "/discuss/tmpl/img/blanktri.gif";
      <?cs /if ?>
     }
   }
 
-  // document.getElementById("spc_" + page).src = "/img/bartri.gif";
+  // document.getElementById("spc_" + page).src = "/discuss/tmpl/img/bartri.gif";
 }
 
 function setup() {
@@ -103,7 +103,7 @@ function setup() {
 //  }
 }
 
-//-->
+-->
 </script>
 
 
@@ -127,7 +127,7 @@ function setup() {
     <?cs set:CUR_SUBJECT = msg.subject_reduced ?>
     <tt><?cs var:prefix ?></tt><b><A HREF="#" CLASS=subj TITLE="<?cs var:msg.subject ?>"><?cs var:msg.subject ?></A></b><br>
   <?cs /if ?>
-  <img alt="" ID="ind_<?cs var:msg.doc_id ?>" width=8 height=10 src="/img/blanktri.gif"><tt><?cs var:prefix ?></tt> <?cs call:render_msg_link(msg) ?> <?cs call:Date.abbr_short(msg.date) ?><br>
+  <img alt="" ID="ind_<?cs var:msg.doc_id ?>" width=8 height=10 src="/discuss/tmpl/img/blanktri.gif"><tt><?cs var:prefix ?></tt> <?cs call:render_msg_link(msg) ?> <?cs call:Date.abbr_short(msg.date) ?><br>
   <?cs each:sub = msg.children ?>
     <?cs call:render_thread(sub, prefix + "&nbsp;") ?>
   <?cs /each ?>
@@ -145,7 +145,7 @@ function setup() {
   <?cs set:post_count = #0 ?>
   <?cs each:msg = CGI.Index.Messages ?>
     <?cs set:post_count = post_count + #1 ?>
-    <img alt="" ID="ind_<?cs var:msg.doc_id ?>" width=8 height=10 src="/img/blanktri.gif"><tt><?cs var:prefix ?></tt> <?cs call:render_msg_link_author(msg) ?> <?cs call:Date.abbr_short(msg.date) ?><br>
+    <img alt="" ID="ind_<?cs var:msg.doc_id ?>" width=8 height=10 src="/discuss/tmpl/img/blanktri.gif"><tt><?cs var:prefix ?></tt> <?cs call:render_msg_link_author(msg) ?> <?cs call:Date.abbr_short(msg.date) ?><br>
   <?cs /each ?>
 <?cs /if ?>
 </font>

@@ -15,7 +15,7 @@
 <SCRIPT LANGUAGE="JavaScript">
 <!--
 function isDataLoaded() {
-  if (document.frames.data.location.href.indexOf("/tmpl/empty.cs") != -1) {
+  if (document.frames.data.location.href.indexOf("empty") != -1) {
     return false;
   } else {
     return true;
@@ -24,7 +24,7 @@ function isDataLoaded() {
 //-->
 </SCRIPT>
 
-<FRAMESET ROWS="<?cs alt:CGI.List.Header.height ?>85<?cs /alt ?>,*">
+<FRAMESET ROWS="<?cs alt:CGI.List.Header.height ?>30<?cs /alt ?>,*">
   <FRAME frameborder=0 framespacing=0 marginheight=0 marginwidth=0 scrolling=no 
   SRC="<?cs var:CGI.URIRoot ?><?cs var:CGI.ArchiveName ?>/header?<?cs var:CGI.QueryString ?>">
   <FRAMESET COLS="200,*" frameborder=1 framespacing=1>
@@ -36,8 +36,7 @@ function isDataLoaded() {
     </FRAMESET>
     <FRAME frameborder=1 framespacing=2 
            marginheight=0 marginwidth=0
-           NAME=data  
-	   SRC="/tmpl/empty.cs">
+           NAME=data>
   </FRAMESET>
 </FRAMESET>
 </HEAD>

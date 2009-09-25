@@ -15,7 +15,7 @@
 
 import re, string
 from log import log
-import neo_cgi, neo_rtv
+import neo_cgi 
 from wordwrap import WordWrap
 
 class Snippet:
@@ -124,8 +124,7 @@ class Snippet:
         # log("sanitize removed: %d" % (oldlen-newlen))
 
         # find query parts in data
-        qwords = neo_rtv.parse(query)
-        # dwords = neo_rtv.parse(data)
+        qwords = string.split(query)
         ldata = string.lower(data)
         qloc = []
         for word in qwords:

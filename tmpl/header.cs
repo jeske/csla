@@ -20,23 +20,23 @@
   a.navi2 { color: black; text-decoration: none}
   a.navi2:hover { color: #995500; text-decoration: underline; }
 
-A:link { color:<?cs var:Style.A_link ?>; }
-A:visited { color:<?cs var:Style.A_visited ?>; }
-A:active { color:<?cs var:Style.A_active ?>; }
-A:hover { color:<?cs var:Style.A_hover ?>; }
+<?cs if:Style.A_link ?>A:link { color:<?cs var:Style.A_link ?>; }<?cs /if ?>
+<?cs if:Style.A_visited ?>A:visited { color:<?cs var:Style.A_visited ?>; }<?cs /if ?>
+<?cs if:Style.A_active ?>A:active { color:<?cs var:Style.A_active ?>; }<?cs /if ?>
+<?cs if:Style.A_hover ?>A:hover { color:<?cs var:Style.A_hover ?>; }<?cs /if ?>
 
-A.lnk:link { color:<?cs var:Style.A_link ?>; }
-A.lnk:visited { color:<?cs var:Style.A_visited ?>; }
-A.lnk:active { color:<?cs var:Style.A_active ?>; }
-A.lnk:hover { color:<?cs var:Style.A_hover ?>; }
+<?cs if:Style.A_link ?>A.lnk:link { color:<?cs var:Style.A_link ?>; }<?cs /if ?>
+<?cs if:Style.A_visited ?>A.lnk:visited { color:<?cs var:Style.A_visited ?>; }<?cs /if ?>
+<?cs if:Style.A_active ?>A.lnk:active { color:<?cs var:Style.A_active ?>; }<?cs /if ?>
+<?cs if:Style.A_hover ?>A.lnk:hover { color:<?cs var:Style.A_hover ?>; }<?cs /if ?>
 
-A.vlnk { color:<?cs var:Style.A_visited ?>; }
-A.vlnk:link { color:<?cs var:Style.A_visited ?>; }
-A.vlnk:visited { color:<?cs var:Style.A_visited ?>; }
-A.vlnk:active { color:<?cs var:Style.A_active ?>; }
-A.vlnk:hover { color:<?cs var:Style.A_hover ?>; }
+<?cs if:Style.A_visited ?>A.vlnk { color:<?cs var:Style.A_visited ?>; }<?cs /if ?>
+<?cs if:Style.A_visited ?>A.vlnk:link { color:<?cs var:Style.A_visited ?>; }<?cs /if ?>
+<?cs if:Style.A_visited ?>A.vlnk:visited { color:<?cs var:Style.A_visited ?>; }<?cs /if ?>
+<?cs if:Style.A_active ?>A.vlnk:active { color:<?cs var:Style.A_active ?>; }<?cs /if ?>
+<?cs if:Style.A_hover ?>A.vlnk:hover { color:<?cs var:Style.A_hover ?>; }<?cs /if ?>
 
-// -->
+-->
 </STYLE>
 </HEAD>
 
@@ -58,6 +58,6 @@ A.vlnk:hover { color:<?cs var:Style.A_hover ?>; }
     <a class=navi1 target=_top href="<?cs var:CGI.URIRoot ?><?cs var:CGI.ArchiveName ?>">Home</a> | 
     <a class=navi1 target=_top href="<?cs var:CGI.URIRoot ?><?cs var:CGI.ArchiveName ?>/search">Search</a> | 
     <a class=navi1 target=_top href="<?cs var:CGI.URIRoot ?><?cs var:CGI.ArchiveName ?>/prefs">Prefs</a> | 
-    <b>Timezone:</b><?cs var:CGI.TimeZone ?> <font size=-1>[<A HREF="<?cs var:CGI.URIRoot ?><?cs var:CGI.ArchiveName ?>/prefs">change</A>]</font>
+    <b>Timezone:</b><?cs var:CGI.TimeZone ?> <font size=-1>[<A HREF="<?cs var:CGI.URIRoot ?><?cs var:CGI.ArchiveName ?>/prefs" target=_top>change</A>]</font>
   </TD></TR></TABLE>
 <?cs /if ?>

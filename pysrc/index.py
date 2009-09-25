@@ -1,6 +1,6 @@
-#!/neo/opt/bin/python
+#! /usr/bin/env python
 
-import sys, getopt
+import os, sys, getopt
 import mymailbox
 
 import nstart
@@ -8,24 +8,26 @@ import nstart
 from mimelib import Message, Parser
 import email_message
 
-from log import *
+from clearsilver.log import *
+from clearsilver import handle_error
 
 import message_db
-import handle_error
 
 class PosParser(Parser.Parser):
     def pos_parse(self, fp):
         return fp.start, fp.stop, self.parse(fp)
 
-def index_mbox (path, name):
-  fp = open(path)
-
-  def raw_mesasge(fp):
+def index_mbox (fp, name, mboxpath, pos=0):
+  def raw_message(fp):
     return fp.read()
 
-  mbox = mymailbox.UberUnixMailbox(fp, factory=raw_mesasge)
-  mdb = message_db.MessageDB("/home/discuss/data/%s" % name)
-  count = 0
+  mbox = mymailbox.UberUnixMailbox(fp, factory=raw_message)
+  mbox.seekp = pos
+  listpath = os.path.join("/home/discuss/data/", name)
+  mdb = message_db.MessageDB(listpath)
+  mdb.createTables()
+
+  count = 1
   while 1:
     msg = mbox.next()
     if not msg: break
@@ -43,14 +45,20 @@ def index_mbox (path, name):
 
   mdb.flush()
 
+  ## write the new position in the mbox
+  #pos = fp.tell()
+  pos = os.stat(mboxpath).st_size
+  mboxpos_fn = os.path.join(listpath, "mbox.pos")
+  open(mboxpos_fn, "w").write(str(pos))
+  
+
 def usage():
   print "./index.py --name listname (list of files)+"
 
 def main(argv):
   alist, args = getopt.getopt(argv[1:], "q:n:", ["help", "name="])
 
-  query = None
-  name = None
+  listname = None
   for (field, val) in alist:
     if field == "--help":
       usage(argv[0])
@@ -58,22 +66,18 @@ def main(argv):
     if field == "-q":
       query = val
     if field in ['-n', "--name"]:
-      name = val
+      listname = val
 
-  if name is None:
+  if listname is None:
     usage()
     return
 
-  if query:
-    rtv = neo_rtv.Retrieve("mail/")
-    results = rtv.search(query)
-    print "There were %d matches" % len(results)
-    for doc in results:
-      print "Document %s" % doc
-  else:
+  if 1:
     for path in args:
       print "Indexing %s" % path
-      index_mbox(path, name)
+      fp = open(path, "r")
+      index_mbox(fp, listname, path)
+
 
 if __name__ == "__main__":
   main(sys.argv)

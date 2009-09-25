@@ -4,7 +4,7 @@ import neo_cgi
 import sys, os, string
 import time
 import profiler
-from log import *
+from clearsilver.log import *
 
 # errors thrown...
 NoPageName = "NoPageName"
@@ -152,7 +152,7 @@ class CSPage:
             SHOULD_DISPLAY = 0
             DISPLAY_ERROR = 1
             
-            import handle_error
+            from clearsilver import handle_error
             handle_error.handleException("Display Failed!")
             ERROR_MESSAGE = handle_error.exceptionString()
 
@@ -194,7 +194,12 @@ class CSPage:
             if self.debugEnabled: p.end()
 
 	    # debug output
-	    if debug_output: self.dumpDebug(etime)
+	    if debug_output: 
+              self.dumpDebug(etime)
+              print "<HR>\n"
+              print "<PRE>"
+              print neo_cgi.htmlEscape(ncgi.hdf.dump())
+              print "</PRE>"
                 
         script_name = ncgi.hdf.getValue("CGI.ScriptName","")
         if script_name:

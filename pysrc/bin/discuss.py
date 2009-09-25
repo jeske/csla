@@ -1,4 +1,4 @@
-#!/neo/opt/bin/python
+#! /usr/bin/env python
 
 import sys, string, os, time, math
 
@@ -7,11 +7,12 @@ import nstart
 import CSPage
 import message_db
 from email_message import RenderMessage
-import neo_cgi, neo_rtv
+import neo_cgi 
+#import neo_rtv
 from wordwrap import WordWrap
-from log import *
+from clearsilver.log import *
 import profiler
-import cache
+#import cache
 import urllib
 
 import email_message
@@ -24,6 +25,9 @@ DISCUSS_DATA_ROOT = "/home/discuss/data"
 VISIT_DURATION = 3600 * 6   # 6 hours
 
 class DiscussPage(CSPage.CSPage):
+    def subclassinit(self):
+      self.ncgi.hdf.setValue("CGI.DocumentRoot", "/var/www/code.ros.org/projects/discuss/tmpl/")
+
     def setup(self):
         self.mdb = None
         self.listname = None
@@ -31,7 +35,6 @@ class DiscussPage(CSPage.CSPage):
         self.index_pages = {}
         self.index_pages_by = 10
         self.threads = 0
-        self.mcache = None
         self.tz = "US/Pacific"
 
         # Determine URI Root
@@ -239,28 +242,12 @@ class DiscussPage(CSPage.CSPage):
         self.ncgi.hdf.setValue("CGI.Last", str(last))
         self.ncgi.hdf.setValue("CGI.Total", str(max_doc))
 
-    def openMessageCache(self):
-        if self.mcache is None:
-            self.mcache = cache.MessageCache(self.listpath)
-        return self.mcache
-
     def export_msg_data(self, msg, prefix, hdf):
-        self.openMessageCache()
-        try:
-            log("%d" % msg.doc_id)
-            self.mcache.get(msg.doc_id, prefix, hdf)
-            # ok, override the date in the cache
-            date_t = hdf.getIntValue(prefix + ".date_t", 0)
-            log("date_t is %s" % date_t)
-            if date_t:
-                neo_cgi.exportDate(hdf, "%s.h_date" % prefix, self.tz, date_t)
-                neo_cgi.exportDate(hdf, "TestDate", self.tz, date_t)
-        except cache.eNotCached:
-            rm = RenderMessage(rawmsg = msg.msg_data, tz=self.tz)
-            uri_root = self.ncgi.hdf.getValue("CGI.URIRoot", "/")
-            attach_url_base = "%s%s/attach/%s/%%s" % (uri_root, self.listname, msg.doc_id)
-            rm.export_message(prefix, hdf, attach_str=attach_url_base)
-            self.mcache.store(msg.doc_id, prefix, hdf)
+        log("%d" % msg.doc_id)
+        rm = RenderMessage(rawmsg = msg.msg_data, tz=self.tz)
+        uri_root = self.ncgi.hdf.getValue("CGI.URIRoot", "/")
+        attach_url_base = "%s%s/attach/%s/%%s" % (uri_root, self.listname, msg.doc_id)
+        rm.export_message(prefix, hdf, attach_str=attach_url_base)
 
     def display_attachment(self):
         self.pagename = "attach"
@@ -516,56 +503,51 @@ class DiscussPage(CSPage.CSPage):
             self.export_pages()
 
         elif mode == "month":
-            idx_cache = cache.IndexCache(self.listpath)
             bym = self.mdb.openByMonth()
             firstnum,count = bym.get(month)
             inv_key = "%s:%s" % (firstnum,count)
 
-            try:
-                
-                idx_cache.get(month, "CGI.Index", self.ncgi.hdf,inv_key=inv_key)
-                log("using cached")
-            except cache.eNotCached:
-                threads = {}
-                thread_date = {}
-                num = first_num
-                x = 0
-                (year, mon) = month.split('-')
-                year = int(year) 
-                mon = int(mon)
-    #            if count > 250:
-    #                self.ncgi.hdf.setValue("CGI.Index.More", "1")
-    #                count = 250 
-                if self.debugEnabled:
-                    p = profiler.Profiler("MDB", "Month Fetch: %d messages" % count)
-                while x < count:
-                    msg = self.mdb.message(num)
-                    tup = time.localtime(msg.date_t)
-                    if tup[0] == year and tup[1] == mon:
-                        try:
-                            threads[msg.thread_id].append(msg)
-                        except KeyError:
-                            threads[msg.thread_id] = [msg]
-                        try:
-                            if thread_date[msg.thread_id] > msg.date_t:
-                                thread_date[msg.thread_id] = msg.date_t
-                        except KeyError:
-                            thread_date[msg.thread_id] = msg.date_t
-                        x += 1
-                    num += 1
-                if self.debugEnabled: p.end()
-                if self.debugEnabled:
-                    p = profiler.Profiler("EXPORT", "Exporting threads")
-                order_threads = []
-                for thread_id, t_date in thread_date.items():
-                    order_threads.append((t_date, thread_id))
-                order_threads.sort()
-                
-                for t_date, thread_id in order_threads:
-                    self.export_thread_index(threads[thread_id], "CGI.Index.Threads")
-                if self.debugEnabled: p.end()
-                self.export_pages()
-                idx_cache.store(month, "CGI.Index", self.ncgi.hdf,inv_key=inv_key)
+            threads = {}
+            thread_date = {}
+            num = first_num
+            x = 0
+            (year, mon) = month.split('-')
+            year = int(year) 
+            mon = int(mon)
+#            if count > 250:
+#                self.ncgi.hdf.setValue("CGI.Index.More", "1")
+#                count = 250 
+            if self.debugEnabled:
+                p = profiler.Profiler("MDB", "Month Fetch: %d messages" % count)
+            while x < count:
+                msg = self.mdb.message(num)
+                if not msg: break
+                tup = time.localtime(msg.date)
+                if tup[0] == year and tup[1] == mon:
+                    try:
+                        threads[msg.thread_id].append(msg)
+                    except KeyError:
+                        threads[msg.thread_id] = [msg]
+                    try:
+                        if thread_date[msg.thread_id] > msg.date:
+                            thread_date[msg.thread_id] = msg.date
+                    except KeyError:
+                        thread_date[msg.thread_id] = msg.date
+                    x += 1
+                num += 1
+            if self.debugEnabled: p.end()
+            if self.debugEnabled:
+                p = profiler.Profiler("EXPORT", "Exporting threads")
+            order_threads = []
+            for thread_id, t_date in thread_date.items():
+                order_threads.append((t_date, thread_id))
+            order_threads.sort()
+
+            for t_date, thread_id in order_threads:
+                self.export_thread_index(threads[thread_id], "CGI.Index.Threads")
+            if self.debugEnabled: p.end()
+            self.export_pages()
+
 
         elif mode == "author" or mode == "search":
             self.ncgi.hdf.setValue("CGI.DisplayMode", "author")
@@ -575,8 +557,9 @@ class DiscussPage(CSPage.CSPage):
                 # Here, we search for the author
                 msgs = self.mdb.search_author(email)
                 authors = self.mdb.openAuthorIndex('r')
-                (junk, name, junk) = authors.get(email)
-                self.ncgi.hdf.setValue("CGI.Author.Name", neo_cgi.htmlEscape(name))
+                
+                authorRow = authors.get(email)
+                self.ncgi.hdf.setValue("CGI.Author.Name", neo_cgi.htmlEscape(authorRow.name))
                 self.ncgi.hdf.setValue("CGI.Author.Email", neo_cgi.htmlEscape(email))
             elif mode == "search":
                 total, msgs = self.mdb.search(query)
@@ -685,11 +668,12 @@ class DiscussPage(CSPage.CSPage):
         for x in range(5):
             try:
                 mnum = max_doc - x
-                msg = self.mdb.message(mnum, summary = 1)
-                msg.hdfExport("CGI.RecentMessages.%d" % x, self.ncgi.hdf,subj_prefix=subj_prefix, tz=self.tz)
-                if wrl.isRead(mnum):
+                msg = self.mdb.message(mnum)
+                if msg:
+                  msg.hdfExport("CGI.RecentMessages.%d" % x, self.ncgi.hdf,subj_prefix=subj_prefix, tz=self.tz)
+                  if wrl.isRead(mnum):
                     self.ncgi.hdf.setValue("CGI.RecentMessages.%d.doc_id.IsRead" % x, "1") 
-                else:
+                  else:
                     self.ncgi.hdf.setValue("CGI.RecentMessages.%d.doc_id.IsRead" % x, "0") 
                 
             except message_db.eNoMessage:
@@ -703,9 +687,9 @@ class DiscussPage(CSPage.CSPage):
         n = 0
         self.ncgi.hdf.setValue("CGI.TopAuthors.NowDate", date)
         for (count, email) in data[:5]:
-            (email, name, junk) = authors.get(email)
+            authorRow = authors.get(email)
             self.ncgi.hdf.setValue("CGI.TopAuthors.Now.%d.email" % n, email)
-            self.ncgi.hdf.setValue("CGI.TopAuthors.Now.%d.name" % n, name)
+            self.ncgi.hdf.setValue("CGI.TopAuthors.Now.%d.name" % n, authorRow.name)
             self.ncgi.hdf.setValue("CGI.TopAuthors.Now.%d.count" % n, str(count))
             n += 1
         self.ncgi.hdf.setValue("CGI.TopAuthors.Now", str(n))
@@ -713,9 +697,10 @@ class DiscussPage(CSPage.CSPage):
         data = authors.get_top('total')
         n = 0
         for (count, email) in data[:5]:
-            (email, name, junk) = authors.get(email)
-            self.ncgi.hdf.setValue("CGI.TopAuthors.Total.%d.email" % n, email)
-            self.ncgi.hdf.setValue("CGI.TopAuthors.Total.%d.name" % n, name)
+            authorRow = authors.get(email)
+            if authorRow is None: continue
+            self.ncgi.hdf.setValue("CGI.TopAuthors.Total.%d.email" % n, authorRow.email)
+            self.ncgi.hdf.setValue("CGI.TopAuthors.Total.%d.name" % n, authorRow.name)
             self.ncgi.hdf.setValue("CGI.TopAuthors.Total.%d.count" % n, str(count))
             n += 1
         self.ncgi.hdf.setValue("CGI.TopAuthors.Total", str(n))
@@ -732,7 +717,7 @@ class DiscussPage(CSPage.CSPage):
                 
                 try:
                     meta = self.mdb.message(m_num)
-                    neo_cgi.exportDate(self.ncgi.hdf, "CGI.NewPosts.%d.Date" % n, self.tz, meta.date_t)
+                    neo_cgi.exportDate(self.ncgi.hdf, "CGI.NewPosts.%d.Date" % n, self.tz, meta.date)
                     n = n + 1
                 except message_db.eNoMessage:
                     pass
@@ -785,20 +770,22 @@ class DiscussPage(CSPage.CSPage):
         last_month = None
         # export the info
         for (count, email) in data[:20]:
-            (email, name, bymonth) = authors.get(email)
-            self.ncgi.hdf.setValue("CGI.TopAuthors.%d.email" % n, email)
-            self.ncgi.hdf.setValue("CGI.TopAuthors.%d.name" % n, name)
-            months = bymonth.keys()
-            months.remove('total')
-            months.sort()
-            months.reverse()
-            if not first_month or first_month > months[-1]:
-                first_month = months[-1]
-            if not last_month or last_month < months[0]:
-                last_month = months[0]
-            for month in months:
-                self.ncgi.hdf.setValue("CGI.TopAuthors.%d.%s" % (n, month), str(bymonth[month]))
-            self.ncgi.hdf.setValue("CGI.TopAuthors.%d.total" % (n), str(bymonth.get('total', 0)))
+            authorRow = authors.get(email)
+            bymonth = authorRow.getByMonth()
+            self.ncgi.hdf.setValue("CGI.TopAuthors.%d.email" % n, authorRow.email)
+            self.ncgi.hdf.setValue("CGI.TopAuthors.%d.name" % n, authorRow.name)
+            if 1:
+              months = bymonth.keys()
+              months.remove('total')
+              months.sort()
+              months.reverse()
+              if not first_month or first_month > months[-1]:
+                  first_month = months[-1]
+              if not last_month or last_month < months[0]:
+                  last_month = months[0]
+              for month in months:
+                  self.ncgi.hdf.setValue("CGI.TopAuthors.%d.%s" % (n, month), str(bymonth[month]))
+              self.ncgi.hdf.setValue("CGI.TopAuthors.%d.total" % (n), str(bymonth.get('total', 0)))
             n += 1
 
         if q_start_date:

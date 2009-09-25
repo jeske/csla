@@ -97,6 +97,7 @@ class UnixMailbox(_Mailbox):
         while 1:
             pos = self.fp.tell()
             line = self.fp.readline()
+            
             if not line:
                 raise EOFError
             if line[:5] == 'From ' and self._isrealfromline(line):

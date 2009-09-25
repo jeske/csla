@@ -30,4 +30,20 @@ function scrollLoc() {
 }
 
 
+function toggleQDisplay(div_id) {
+  var adiv = document.getElementById(div_id);
+
+  if (adiv == null || adiv.style == null) {
+    alert("missing div toggle: " + div_id);
+    return;
+  }
+
+  if (adiv.style.display == "none") {
+    adiv.style.display = "block";
+  } else {
+    adiv.style.display = "none";
+  }
+}
+
+
 <?cs /if ?>

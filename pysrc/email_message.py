@@ -3,13 +3,14 @@ from types import ListType, StringType
 import os, re, time
 
 ## Importing iconvcodec enables the iconv encoding/decoding
-import iconvcodec
+#import iconvcodec
+
 from log import log
 from mimelib import Message, Generator, Parser, date
-from SafeHtml import SafeHtmlString
+from base.SafeHtml import SafeHtmlString
 import neo_cgi
 import string
-import MimeQPEnc
+from base import MimeQPEnc
 import rfc822
 import urllib
 

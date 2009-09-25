@@ -32,11 +32,11 @@ Style {
 
   Msg.HeaderBGColor = #444444
 
-  A_link  = default
+  A_link  = 
   # #840284 is close to the IE default visited link color
   A_visited = #840284
-  A_active = default
-  A_hover  = default
+  A_active = 
+  A_hover  = 
 
 }
 

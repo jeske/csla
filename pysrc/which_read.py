@@ -2,16 +2,40 @@
 import os, sys, string, re, time
 import marshal
 
-from TCS.bsddb import db
-
-
 from log import *
 
 import time,md5
 
 import neo_cgi, neo_util
-import neo_rtv
 
+from clearsilver import odb, hdfhelp, odb_sqlite3
+
+class WhichReadDB(odb.Database):
+  def __init__ (self, conn):
+    odb.Database.__init__(self, conn)
+    self.addTable("whichread",  "wr_whichread",  WhichReadTable)
+
+  def get(self, readerid):
+    row = self.whichread.lookup(readerid=readerid)
+    if not row: row = ''
+    return row
+
+class WhichReadTable(odb.Table):
+  def _defineRows(self):
+    self.d_addColumn("readerid", odb.kVarString, primarykey=1)
+    self.d_addColumn("wrlist", odb.kVarString)
+
+def createTables(path):
+  dbpath = "%s/whichread.db3" % path
+#  conn = odb_sqlite3.Connection(dbpath, autocommit=0)
+  conn = odb_sqlite3.Connection(dbpath)
+  db = WhichReadDB(conn)
+
+  db.createTables()
+  db.synchronizeSchema()
+  db.createIndices()
+
+  
 
 class WhichRead:
     def __init__ (self, listname,path,ncgi):
@@ -35,10 +59,10 @@ class WhichRead:
 
     def _db(self):
         if self.__db is None:
-            dbf = db.DB()
-            dbpath = "%s/whichread.db" % self._path
-            dbf.open(dbpath, db.DB_BTREE, db.DB_CREATE)
-            self.__db = dbf
+            dbpath = "%s/whichread.db3" % self._path
+#            conn = odb_sqlite3.Connection(dbpath, autocommit=0)
+            conn = odb_sqlite3.Connection(dbpath)
+            self.__db = WhichReadDB(conn)
         return self.__db
 
     def markMsgRead(self, message_num):
@@ -76,39 +100,31 @@ class WhichRead:
         # read whichread from disk
         wdb = self._db()
         whichread = ""
-        try:
-            whichread = wdb.get(self._whichReadID)
-        except db.error, reason:
-            if reason[0] == -7:
-                pass
-            else:
-                raise
-        wrl = WRList(whichread)
-        
-        # unpack cookie
-        
-        
-        # kill redundant entries & write new cookie
-        
-        # return whichread dict
-        
+
+        whichread = wdb.whichread.lookup(readerid=self._whichReadID)
+        if whichread is None:
+          wrlist = ''
+        else:
+          wrlist = whichread.wrlist
+        wrl = WRList(wrlist)
         return wrl
 
     def addToDB(self,mnum):
         wdb = self._db()
         whichread = ""
         
-        try:
-            whichread = wdb.get(self._whichReadID)
-        except db.error, reason:
-            if reason[0] == -7:
-                pass
-            else:
-                raise
+        whichread = wdb.whichread.lookup(readerid=self._whichReadID)
+        if whichread is None:
+          wrlist = ''
+        else:
+          wrlist = whichread.wrlist
 
-        wr_list = WRList(whichread)
+        wr_list = WRList(wrlist)
         wr_list.markRead(mnum)
-        wdb.put(self._whichReadID,wr_list.dump())
+        
+        row = wdb.whichread.lookupCreate(readerid=self._whichReadID)
+        row.wrlist = wr_list.dump()
+        row.save()
 
     def __del__ (self):
         if self.__db:

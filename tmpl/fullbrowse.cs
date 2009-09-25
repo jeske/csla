@@ -1,10 +1,10 @@
 <?cs include:"dates.cs" ?>
 <?cs include:"header.cs" ?>
 <STYLE>
-A.subj:link { color:black; text-decoration:none; cursor:default; }
-A.subj:visited { color:black; text-decoration:none; cursor:default; }
-A.subj:hover { color:black; text-decoration:none; cursor:default; }
-A.subj:active { color:black; text-decoration:none; cursor:default; }
+A.subj:link { color:black; text-decoration:none; }
+A.subj:visited { color:black; text-decoration:none; }
+A.subj:hover { color:black; text-decoration:none; }
+A.subj:active { color:black; text-decoration:none; }
 
 </STYLE>
 
