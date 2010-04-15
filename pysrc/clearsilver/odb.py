@@ -64,15 +64,16 @@ import weakref
 
 import handle_error
 
-eNoSuchColumn         = "odb.eNoSuchColumn"
-eNonUniqueMatchSpec   = "odb.eNonUniqueMatchSpec"
-eNoMatchingRows       = "odb.eNoMatchingRows"
-eInternalError        = "odb.eInternalError"
-eInvalidMatchSpec     = "odb.eInvalidMatchSpec"
-eInvalidData          = "odb.eInvalidData"
-eUnsavedObjectLost    = "odb.eUnsavedObjectLost"
-eDuplicateKey         = "odb.eDuplicateKey"
-eInvalidJoinSpec      = "odb.eInvalidJoinSpec"
+class eNoSuchColumn(Exception): pass
+class eNoMatchingRows(Exception): pass
+class eNonUniqueMatchSpec(Exception): pass
+class eInternalError(Exception): pass
+class eInvalidMatchSpec(Exception): pass
+class eInvalidData(Exception): pass
+class eUnsavedObjectLost(Exception): pass
+class eDuplicateKey(Exception): pass
+class eInvalidJoinSpec(Exception): pass
+
 
 #####################################
 # COLUMN TYPES                       

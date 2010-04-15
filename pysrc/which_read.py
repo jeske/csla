@@ -4,7 +4,7 @@ import marshal
 
 from log import *
 
-import time,md5
+import time,hashlib
 
 import neo_cgi, neo_util
 
@@ -48,7 +48,7 @@ class WhichRead:
     def getWhichReadID(self):
         wrid = self.ncgi.hdf.getValue("Cookie.WRID","")
         if not wrid:
-           m = md5.new()
+           m = hashlib.md5()
            m.update("%s-%s" % (self.ncgi.hdf.getValue("CGI.RemoteAddress","ADDR"),
                                time.time()))
            wrid = m.hexdigest()

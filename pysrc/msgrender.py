@@ -419,7 +419,7 @@ def fixbody(raw_body):
 
 # ----------------------------------------
 
-import md5
+import hashlib
 
 class MatchTracker:
     def __init__(self,sequence_len,mid):
@@ -522,7 +522,7 @@ class TextSourceMatcher:
         self._doc_word_count[mid] = len(words)
         
         for x in range(len(words)-PICK_COUNT):
-            m = md5.new()
+            m = hashlib.md5()
             for word in words[x:x+PICK_COUNT]:
                 m.update(word)
 

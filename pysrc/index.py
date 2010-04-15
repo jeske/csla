@@ -23,7 +23,7 @@ def index_mbox (fp, name, mboxpath, pos=0):
 
   mbox = mymailbox.UberUnixMailbox(fp, factory=raw_message)
   mbox.seekp = pos
-  listpath = os.path.join("/home/discuss/data/", name)
+  listpath = name
   mdb = message_db.MessageDB(listpath)
   mdb.createTables()
 
@@ -53,7 +53,7 @@ def index_mbox (fp, name, mboxpath, pos=0):
   
 
 def usage():
-  print "./index.py --name listname (list of files)+"
+  print "./index.py --name listname (list of mbox files to import)+"
 
 def main(argv):
   alist, args = getopt.getopt(argv[1:], "q:n:", ["help", "name="])
