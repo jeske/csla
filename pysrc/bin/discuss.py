@@ -343,7 +343,8 @@ class DiscussPage(CSPage.CSPage):
                 hdf.setValue("CGI.Messages.%d.Message.RAWDATA" % num,meta.msg_data)
 
             self.export_msg_data(meta, "CGI.Messages.%d.Message" % num, self.ncgi.hdf)
-            self.whichread.markMsgRead(num)
+            if DISCUSS_WHICHREAD:
+                self.whichread.markMsgRead(num)
 
     def display_threads(self):
         self.pagename = "threads"

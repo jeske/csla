@@ -42,6 +42,14 @@ Install the web-CGI into Apache or your local webserver. The Apache directives I
   </Directory>
 
 
+If you would like to enable server-side storage for information about which
+posts a client has read, then you can enable the "whichread support" by adding
+the following environment variable. However, be sure that the webserver has
+rights to write to the whichread db files or you will have trouble.
+
+  SetEnv DISCUSS_WHICHREAD_ENABLE 1
+
+
 HOOKUP LIVE MAIL IMPORTING
 --------------------------
 
