@@ -752,7 +752,7 @@ class MessageDB:
         author_idx.add(from_name, from_addr, date_t)
 
         # 11) Update search
-        if 0:
+        if 1:
           search_idx = self.openSearchIndex('w')
           search_idx.add(doc_id, m, from_addr)
 
