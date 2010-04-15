@@ -67,6 +67,8 @@ class DiscussPage(CSPage.CSPage):
             n += 1
         self.load_list()
         
+        self.subj_prefix = self.ncgi.hdf.getValue("CGI.List.SubjectPrefix", "")
+
         if self.listname:
             self.determine_page()
             self.check_visit_cookie()
@@ -350,7 +352,6 @@ class DiscussPage(CSPage.CSPage):
         self.pagename = "threads"
         THREAD_COUNT = 25
         hdf = self.ncgi.hdf
-        subj_prefix = self.ncgi.hdf.getValue("CGI.List.SubjectPrefix", "")
         q_start = hdf.getIntValue("Query.start",1)
 
         max_doc, max_thread = self.mdb.counts()
@@ -364,7 +365,7 @@ class DiscussPage(CSPage.CSPage):
         for x in range(q_start,q_start + THREAD_COUNT):
             try:
                 msgs = self.mdb.thread(-1 * x)
-                msgs[-1].hdfExport("CGI.Threads.%d" % x, self.ncgi.hdf,tz=self.tz,subj_prefix=subj_prefix)
+                msgs[-1].hdfExport("CGI.Threads.%d" % x, self.ncgi.hdf,tz=self.tz,subj_prefix=self.subj_prefix)
                 self.ncgi.hdf.setValue("CGI.Threads.%d.count" % x, str(len(msgs)))
                 last_thread = x
             except message_db.eNoMessage:
@@ -412,8 +413,6 @@ class DiscussPage(CSPage.CSPage):
             if msg.parent_id == 0:
                 top = msg
 
-        subj_prefix = self.ncgi.hdf.getValue("CGI.List.SubjectPrefix", "")
-
         def export_part(msg_map, parent_id, prefix):
             current_id = msg_map[parent_id].child_id
             n = 0
@@ -423,7 +422,7 @@ class DiscussPage(CSPage.CSPage):
                 except KeyError:
                     # this implies that this thread continues past what we have
                     break
-                msg.hdfExport("%s.%d" % (prefix, n), self.ncgi.hdf, tz=self.tz, subj_prefix=subj_prefix)
+                msg.hdfExport("%s.%d" % (prefix, n), self.ncgi.hdf, tz=self.tz, subj_prefix=self.subj_prefix)
                 self._add_msg_to_page(msg, "%s.%d" % (prefix, n))
                 if msg.child_id:
                     export_part(msg_map, current_id, "%s.%d.children" % (prefix, n))
@@ -438,13 +437,13 @@ class DiscussPage(CSPage.CSPage):
                     tops.append(msg)
             for top in tops:
                 thr_prefix = prefix + ".%d" % (self.threads)
-                top.hdfExport(thr_prefix, self.ncgi.hdf, tz=self.tz, subj_prefix=subj_prefix)
+                top.hdfExport(thr_prefix, self.ncgi.hdf, tz=self.tz, subj_prefix=self.subj_prefix)
                 self._add_msg_to_page(top, thr_prefix)
                 export_part(msg_d, top.doc_id, thr_prefix + ".children")
                 self.threads += 1
         else:
             thr_prefix = prefix + ".%d" % (self.threads)
-            top.hdfExport(thr_prefix, self.ncgi.hdf, tz=self.tz, subj_prefix=subj_prefix)
+            top.hdfExport(thr_prefix, self.ncgi.hdf, tz=self.tz, subj_prefix=self.subj_prefix)
             self._add_msg_to_page(top, thr_prefix)
             export_part(msg_d, top.doc_id, thr_prefix + ".children")
             self.threads += 1
@@ -566,7 +565,6 @@ class DiscussPage(CSPage.CSPage):
 
         elif mode == "author" or mode == "search":
             self.ncgi.hdf.setValue("CGI.DisplayMode", "author")
-            subj_prefix = self.ncgi.hdf.getValue("CGI.List.SubjectPrefix", "")
             msgs = []
             if mode == "author":
                 # Here, we search for the author
@@ -581,7 +579,7 @@ class DiscussPage(CSPage.CSPage):
                 
             n = 0
             for msg in msgs:
-                msg.hdfExport("CGI.Index.Messages.%d" % (n), self.ncgi.hdf, tz=self.tz, subj_prefix=subj_prefix)
+                msg.hdfExport("CGI.Index.Messages.%d" % (n), self.ncgi.hdf, tz=self.tz, subj_prefix=self.subj_prefix)
                 self._add_msg_to_page(msg, "CGI.Index.Messages.%d" % (n))
                 n += 1
             self.export_pages()
@@ -669,8 +667,6 @@ class DiscussPage(CSPage.CSPage):
 
     def display_home(self):
         self.pagename = "home"
-        subj_prefix = self.ncgi.hdf.getValue("CGI.List.SubjectPrefix", "")
-        
         # We need the bymonth data, the 5 most recent threads, the top authors 
         # this month and ever
 
@@ -685,7 +681,7 @@ class DiscussPage(CSPage.CSPage):
                 mnum = max_doc - x
                 msg = self.mdb.message(mnum)
                 if msg:
-                  msg.hdfExport("CGI.RecentMessages.%d" % x, self.ncgi.hdf,subj_prefix=subj_prefix, tz=self.tz)
+                  msg.hdfExport("CGI.RecentMessages.%d" % x, self.ncgi.hdf,subj_prefix=self.subj_prefix, tz=self.tz)
                   if wrl.isRead(mnum):
                     self.ncgi.hdf.setValue("CGI.RecentMessages.%d.doc_id.IsRead" % x, "1") 
                   else:

@@ -1,6 +1,32 @@
 
 
-- build a new version w/sqlite
+------------[ for first release ]--------------------
+
+- test whichread information
+- finish fixing search engine executable location handling
+- test search 
+
+
+- update javascript multi-message scroll tracking for google chrome
+
+- increase default font sizes
+
+- create a default list.hdf config (or at least document the values)
+
+- handle subjet-prefix blocks more automatically
+
+- properly hide MIMEtype quoted messages ala-yahoo-mail
+
+- lighter weight message header display
+
+----------[ future ideas ]-----------------
+
+- more pipermail-style "raw html dump" mode for static sites
+
+- use whichread information to show a more willow/gmail style version with
+  collapsed messages
+
 - add subject/date based 'soft-threading'
 
+- make a version for appengine?
 
