@@ -59,7 +59,7 @@
     <?cs elif:sub.b_type == "message" ?>
       <?cs call:render_attach_list(sub) ?>
     <?cs elif:sub.b_type == "attach"  || sub.b_type == "image" ?>
-      <IMG WIDTH=10 HEIGHT=12 BORDER=0 SRC="/discuss/tmpl/img/ui/r/unknown_file_icon.gif">&nbsp;<a target=_top href="/cgi-bin/attach.py/<?cs var:sub.name ?>?boxid=<?cs var:Query.boxid ?>&cur=<?cs var:Query.cur ?>&idx_cur=<?cs var:Query.idx_cur ?>&attach=<?cs name:sub ?>:<?cs var:sub.name ?>"><?cs var:sub.name ?></a>&nbsp;
+      <IMG WIDTH=10 HEIGHT=12 BORDER=0 SRC="<?cs var:CGI.ScriptName ?>/tmpl/img/ui/r/unknown_file_icon.gif">&nbsp;<a target=_top href="/cgi-bin/attach.py/<?cs var:sub.name ?>?boxid=<?cs var:Query.boxid ?>&cur=<?cs var:Query.cur ?>&idx_cur=<?cs var:Query.idx_cur ?>&attach=<?cs name:sub ?>:<?cs var:sub.name ?>"><?cs var:sub.name ?></a>&nbsp;
     <?cs /if ?>
   <?cs /each ?>
 <?cs /def ?>

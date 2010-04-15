@@ -1,10 +1,13 @@
 # this starts up the python enviroment
 # 
+
+import sys, os
+
 # The root dir should point to the top of the python tree
+# derive the base python importer path from the location of the launched python program
 
-import sys
+ROOT_DIR = os.path.join( os.getcwd(), os.path.dirname(sys.argv[0]), '..')
 
-ROOT_DIR = "../"
 sys.path.insert(0,ROOT_DIR)
 from neo_paths import paths
 sys.path = paths(ROOT_DIR) + sys.path

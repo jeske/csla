@@ -28,7 +28,7 @@
 </td></tr>
 <?cs each:arc=CGI.Archives ?>
 <tr><td>
-&nbsp;&middot;&nbsp;<a href="<?cs var:CGI.URIRoot ?><?cs var:arc ?>"><?cs var:arc.Name ?></a>
+&nbsp;&middot;&nbsp;<a href="<?cs var:CGI.URIRoot ?><?cs var:arc ?>"><?cs alt:arc.Name ?><?cs var:arc ?><?cs /alt ?></a>
   <blockquote>
     <?cs var:arc.Description ?>
   </blockquote>

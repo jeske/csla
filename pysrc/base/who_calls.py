@@ -7,7 +7,7 @@ import sys
 
 from log import *
 
-whoCallsError = "whoCallsError"
+class whoCallsError(Exception): pass
 
 #--------------------------------------------------------------
 # Example use:

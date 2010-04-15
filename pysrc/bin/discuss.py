@@ -21,12 +21,23 @@ import which_read
 
 import search_help
 
-DISCUSS_DATA_ROOT = "/home/discuss/data"
+
+class eNoDiscussDataRootSet(Exception): pass
+if os.environ.has_key("DISCUSS_DATA_ROOT"):
+  DISCUSS_DATA_ROOT = os.environ["DISCUSS_DATA_ROOT"]
+else:
+  raise eNoDiscussDataRootSet()
+
+if os.environ.has_key("DISCUSS_WHICHREAD_ENABLE"):
+  DISCUSS_WHICHREAD = 1
+else:
+  DISCUSS_WHICHREAD = 0
+
 VISIT_DURATION = 3600 * 6   # 6 hours
 
 class DiscussPage(CSPage.CSPage):
     def subclassinit(self):
-      self.ncgi.hdf.setValue("CGI.DocumentRoot", "/var/www/code.ros.org/projects/discuss/tmpl/")
+      self.setPaths(os.path.join(nstart.ROOT_DIR,"../tmpl"))
 
     def setup(self):
         self.mdb = None
@@ -36,6 +47,8 @@ class DiscussPage(CSPage.CSPage):
         self.index_pages_by = 10
         self.threads = 0
         self.tz = "US/Pacific"
+
+        self.ncgi.hdf.setValue("CGI.DISCUSS_DATA_ROOT",DISCUSS_DATA_ROOT)
 
         # Determine URI Root
         scn = self.ncgi.hdf.getValue("CGI.ScriptName", "")
@@ -187,7 +200,7 @@ class DiscussPage(CSPage.CSPage):
             self.listname = self.path_info[0]
             self.listpath = os.path.join(DISCUSS_DATA_ROOT, self.listname)
             if not os.path.isdir(self.listpath):
-                raise "List %s not found" % self.listname
+                raise Exception("List %s not found" % self.listname)
 
             self.ncgi.hdf.setValue("CGI.ArchiveName", self.listname)
             self.mdb = message_db.MessageDB("%s/%s" % (DISCUSS_DATA_ROOT, self.listname))
@@ -259,7 +272,7 @@ class DiscussPage(CSPage.CSPage):
                 num = -1
 
         else:
-            raise "invalid attachment URL"
+            raise Exception("invalid attachment URL")
 
         attachname = urllib.unquote(string.join(self.path_info[3:],"/"))
         log("attach name: %s" % attachname)
@@ -298,7 +311,8 @@ class DiscussPage(CSPage.CSPage):
         count = self.mdb.thread_count(meta.thread_id)
         self.ncgi.hdf.setValue("CGI.Msg.Meta.thread_count", str(count))
 
-        self.whichread.markMsgRead(num)
+        if DISCUSS_WHICHREAD:
+            self.whichread.markMsgRead(num)
 
     def display_messages(self):
         hdf = self.ncgi.hdf
