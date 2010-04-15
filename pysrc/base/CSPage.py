@@ -7,13 +7,13 @@ import profiler
 from clearsilver.log import *
 
 # errors thrown...
-NoPageName = "NoPageName"
-NoDisplayMethod = "NoDisplayMethod"
+class NoPageName(Exception): pass
+class NoDisplayMethod(Exception): pass
 
 # errors signaled back to here
-Redirected = "Redirected"
-DisplayDone = "DisplayDone"
-DisplayError = "DisplayError"
+class Redirected(Exception): pass
+class DisplayDone(Exception): pass
+class DisplayError(Exception): pass
 
 class Context:
     def __init__ (self):
@@ -57,6 +57,8 @@ class CSPage:
         pass
 
     def setPaths(self, paths):
+        if (type(paths) != type([])):
+          paths = [paths]
         for path in paths:  
             self.ncgi.hdf.setValue("hdf.loadpaths.%d" % self._path_num, path)
             self._path_num = self._path_num + 1
@@ -190,7 +192,21 @@ class CSPage:
             # ncgi.hdf.setValue ("cgiout.charset", "utf-8");
 
             if self.debugEnabled: p = profiler.Profiler("CS", "display %s" % template_name)
-	    ncgi.display(template_name)
+            if debug_output:
+              try:
+	        ncgi.display(template_name)
+              except:
+                print "Content-Type: text/html\n\n"
+
+                from clearsilver import handle_error
+                print "<PRE>"
+                print handle_error.exceptionString()
+                print "</PRE>"
+                
+            else:
+	      ncgi.display(template_name)
+              
+
             if self.debugEnabled: p.end()
 
 	    # debug output
